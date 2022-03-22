@@ -16,12 +16,23 @@
 # DEALINGS IN THE SOFTWARE.
 
 import bittensor
+import argparse
 import random
 import time
 import torch
 from rich import print
 
-def run ():
+
+def config():
+    parser = argparse.ArgumentParser()   
+    parser.add_argument('--sync_every_n_blocks', type=int, help='blocks per resync', default=10) 
+    bittensor.dendrite.add_args( parser )
+    bittensor.axon.add_args( parser )
+    bittensor.logging.add_args( parser )
+    bittensor.wallet.add_args( parser )
+    return bittensor.config( parser )
+
+def run ( config ):
 
     # Make a subtensor connection to the pool chain.
     # This is local because we are assuming you ran the chain locally.
@@ -51,7 +62,7 @@ def run ():
     # btcli new_coldkey --wallet.name poolcoldkey
     # btcli new_hotkey --wallet.name poolhotkey
     print ('Loading pool chain wallet...')
-    pool_wallet = bittensor.wallet( name = 'poolwallet', hotkey = 'poolhotkey' )
+    pool_wallet = bittensor.wallet( config = config )
     print ('Done.')
 
     # Register the pool wallet to nobunaga
@@ -68,7 +79,7 @@ def run ():
 
     # We need an RPC client to forward requests onward. 
     print ('Creating dendrite ...')
-    dendrite = bittensor.dendrite( wallet = pool_wallet )
+    dendrite = bittensor.dendrite( config = config , wallet = pool_wallet )
     print ('Done.')
 
     # We are updating weights for each miner, this is nothing crazy, 
@@ -98,6 +109,7 @@ def run ():
     # Create the axon RPC endpoint
     print ('Creating axon ...')
     axon = bittensor.axon( 
+        config = config,
         wallet = pool_wallet,
         forward_text = forward_text
     )
@@ -143,7 +155,7 @@ def run ():
 
 
 if __name__ == "__main__":
-    run()
+    run( config() )
 
 
 
